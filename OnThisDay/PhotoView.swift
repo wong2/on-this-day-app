@@ -1,6 +1,145 @@
 import Photos
 import SwiftUI
 import MapKit
+import UniformTypeIdentifiers
+
+nonisolated struct SharedPhotoFile: Identifiable, Sendable {
+    let id = UUID()
+    let url: URL
+
+    @concurrent
+    static func create(data: Data, typeIdentifier: String?) async throws -> SharedPhotoFile {
+        guard !data.isEmpty, let typeIdentifier,
+              let type = UTType(typeIdentifier), type.conforms(to: .image),
+              let fileExtension = type.preferredFilenameExtension else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("OnThisDayShare-\(UUID().uuidString)", isDirectory: true)
+        do {
+            try Task.checkCancellation()
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let url = directory.appendingPathComponent("Photo.\(fileExtension)")
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            try Task.checkCancellation()
+            return SharedPhotoFile(url: url)
+        } catch {
+            try? FileManager.default.removeItem(at: directory)
+            throw error
+        }
+    }
+
+    func remove() {
+        try? FileManager.default.removeItem(at: url.deletingLastPathComponent())
+    }
+}
+
+@MainActor
+@Observable
+final class PhotoShareLoader {
+    var file: SharedPhotoFile?
+    var errorMessage: String?
+    private(set) var isPreparing = false
+    private(set) var progress: Double = 0
+    @ObservationIgnored private var retainedFile: SharedPhotoFile?
+    @ObservationIgnored private var requestID: PHImageRequestID?
+    @ObservationIgnored private var writeTask: Task<Void, Never>?
+    @ObservationIgnored private var timeoutTask: Task<Void, Never>?
+    @ObservationIgnored private var token = UUID()
+    @ObservationIgnored private let manager = PHImageManager.default()
+
+    deinit { retainedFile?.remove() }
+
+    func prepare(id: String) {
+        guard file == nil else { return }
+        cancelPreparation()
+        errorMessage = nil
+        guard let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject else {
+            errorMessage = "This photo is no longer available. Check photo access in Settings."
+            return
+        }
+        isPreparing = true
+        let currentToken = token
+        let options = PHImageRequestOptions()
+        options.version = .current
+        options.isNetworkAccessAllowed = true
+        options.progressHandler = { [weak self] progress, _, _, _ in
+            Task { @MainActor in
+                guard let self, self.token == currentToken else { return }
+                self.progress = progress
+            }
+        }
+        requestID = manager.requestImageDataAndOrientation(for: asset, options: options) { [weak self] data, type, _, info in
+            let failed = info?[PHImageErrorKey] != nil || info?[PHImageCancelledKey] as? Bool == true
+            Task { @MainActor in
+                guard let self, self.token == currentToken else { return }
+                self.requestID = nil
+                guard !failed, let data else { self.fail(); return }
+                self.writeTask = Task {
+                    do {
+                        let file = try await SharedPhotoFile.create(data: data, typeIdentifier: type)
+                        guard !Task.isCancelled, self.token == currentToken else { file.remove(); return }
+                        self.timeoutTask?.cancel()
+                        self.timeoutTask = nil
+                        self.writeTask = nil
+                        self.retainedFile = file
+                        self.isPreparing = false
+                        self.file = file
+                    } catch {
+                        guard self.token == currentToken else { return }
+                        self.fail()
+                    }
+                }
+            }
+        }
+        timeoutTask = Task { [weak self] in
+            do { try await Task.sleep(for: .seconds(120)) } catch { return }
+            guard let self, self.token == currentToken else { return }
+            self.fail()
+        }
+    }
+
+    func cancelPreparation() {
+        token = UUID()
+        if let requestID { manager.cancelImageRequest(requestID) }
+        requestID = nil
+        writeTask?.cancel()
+        writeTask = nil
+        timeoutTask?.cancel()
+        timeoutTask = nil
+        isPreparing = false
+        progress = 0
+    }
+
+    func finishSharing() {
+        file = nil
+        retainedFile?.remove()
+        retainedFile = nil
+    }
+
+    private func fail() {
+        cancelPreparation()
+        errorMessage = "Couldn’t prepare this photo. If it’s in iCloud, check your connection and try again."
+    }
+}
+
+struct PhotoShareSheet: UIViewControllerRepresentable {
+    let fileURL: URL
+    @Environment(\.dismiss) private var dismiss
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: [fileURL], applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, _, _, _ in
+            Task { @MainActor in dismiss() }
+        }
+        if let popover = controller.popoverPresentationController {
+            popover.sourceView = controller.view
+            popover.sourceRect = CGRect(x: controller.view.bounds.midX, y: controller.view.bounds.midY, width: 1, height: 1)
+        }
+        return controller
+    }
+
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
 
 @MainActor
 @Observable

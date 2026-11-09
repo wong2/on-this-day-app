@@ -72,6 +72,54 @@ nonisolated final class MemoryIndexTests: XCTestCase {
     }
 
     @MainActor
+    func testShareExportPreservesImageBytesAndCleansUp() async throws {
+        let data = try XCTUnwrap(UIGraphicsImageRenderer(size: CGSize(width: 32, height: 48)).image { context in
+            UIColor.orange.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 32, height: 48))
+        }.pngData())
+        let first = try await SharedPhotoFile.create(data: data, typeIdentifier: "public.png")
+        let second = try await SharedPhotoFile.create(data: data, typeIdentifier: "public.png")
+        defer { first.remove(); second.remove() }
+        XCTAssertEqual(first.url.pathExtension, "png")
+        XCTAssertEqual(try Data(contentsOf: first.url), data)
+        XCTAssertNotEqual(first.url, second.url)
+        first.remove()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: first.url.deletingLastPathComponent().path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: second.url.path))
+    }
+
+    @MainActor
+    func testShareExportRejectsMissingDataAndCancelledWork() async throws {
+        do {
+            _ = try await SharedPhotoFile.create(data: Data(), typeIdentifier: "public.png")
+            XCTFail("Empty data must not open a share sheet")
+        } catch {}
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await SharedPhotoFile.create(data: Data([1]), typeIdentifier: "public.png")
+        }
+        do {
+            let file = try await task.value
+            file.remove()
+            XCTFail("Cancelled preparation must not produce a shared file")
+        } catch is CancellationError {} catch {
+            XCTFail("Expected cancellation, got \(error)")
+        }
+    }
+
+    @MainActor
+    func testSharingUnavailableAssetShowsRecoverableError() {
+        let loader = PhotoShareLoader()
+        loader.prepare(id: "missing-test-asset")
+        XCTAssertNotNil(loader.errorMessage)
+        XCTAssertFalse(loader.isPreparing)
+        XCTAssertNil(loader.file)
+        loader.cancelPreparation()
+        loader.finishSharing()
+        XCTAssertNil(loader.file)
+    }
+
+    @MainActor
     func testCityCachePrefetchesInOrderAndReturnsCachedNamesSynchronously() async throws {
         let current = try XCTUnwrap(MemoryCoordinate(latitude: 1, longitude: 1))
         let next = try XCTUnwrap(MemoryCoordinate(latitude: 2, longitude: 2))
