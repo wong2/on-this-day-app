@@ -252,10 +252,6 @@ struct YearStoryView: View {
                 .accessibilityLabel("Year \(String(year.year)). Years and About")
                 .disabled(photoIsZoomed)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                PhotoCityLabel(city: cityStore.cachedCity(for: year.photos[photoIndex].coordinate))
-                    .frame(maxWidth: .infinity)
-                    .opacity(photoIsZoomed ? 0 : 1)
-                    .accessibilityHidden(photoIsZoomed)
                 Text(today.formatted(.dateTime.month(.abbreviated).day()))
                     .font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .trailing)
@@ -292,28 +288,30 @@ struct YearStoryView: View {
             .scrollDisabled(photoIsZoomed)
             .clipped()
 
-            HStack {
-                Button { movePhoto(-1) } label: {
-                    Image(systemName: "chevron.left").frame(width: 44, height: 44)
+            HStack(spacing: 12) {
+                HStack(spacing: 6) {
+                    Text("\(photoIndex + 1) / \(year.photos.count)")
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        .accessibilityLabel("Photo \(photoIndex + 1) of \(year.photos.count)")
+                    if isCheckingScreenshots {
+                        ProgressView().controlSize(.mini)
+                            .accessibilityLabel("Checking screenshots")
+                    }
                 }
-                .disabled(photoIndex == 0).accessibilityLabel("Previous photo")
-                Spacer()
-                Text(isCheckingScreenshots ? "Checking screenshots…" : "\(photoIndex + 1) / \(year.photos.count)")
-                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                    .accessibilityLabel("Photo \(photoIndex + 1) of \(year.photos.count)")
+                .fixedSize()
+                PhotoCityLabel(city: cityStore.cachedCity(for: year.photos[photoIndex].coordinate))
+                    .frame(maxWidth: .infinity)
+                    .opacity(photoIsZoomed ? 0 : 1)
+                    .accessibilityHidden(photoIsZoomed)
                 Button { share.prepare(id: year.photos[photoIndex].id) } label: {
                     Image(systemName: "square.and.arrow.up").frame(width: 44, height: 44)
                 }
                 .disabled(share.isPreparing)
                 .accessibilityLabel("Share photo")
-                Spacer()
-                Button { movePhoto(1) } label: {
-                    Image(systemName: "chevron.right").frame(width: 44, height: 44)
-                }
-                .disabled(photoIndex == year.photos.count - 1).accessibilityLabel("Next photo")
             }
             .disabled(photoIsZoomed)
-            .padding(.horizontal, 8)
+            .padding(.leading, 16)
+            .padding(.trailing, 8)
         }
         .task(id: cityCoordinates) {
             await cityStore.load(cityCoordinates)
