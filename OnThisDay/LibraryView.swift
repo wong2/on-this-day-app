@@ -8,6 +8,14 @@ struct LibraryView: View {
     @State private var selectedYear: Int?
     @State private var showingInfo = false
     @State private var photoIsZoomed = false
+    @State private var yearToast: YearToast?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private struct YearToast: Identifiable {
+        let id = UUID()
+        let yearsAgo: Int
+        var text: String { yearsAgo == 1 ? "1 year ago" : "\(yearsAgo) years ago" }
+    }
 
     var body: some View {
         Group {
@@ -39,7 +47,20 @@ struct LibraryView: View {
         .onChange(of: library.years) { _, years in
             if !years.contains(where: { $0.year == selectedYear }) { selectedYear = years.first?.year }
         }
-        .onChange(of: selectedYear) { _, _ in photoIsZoomed = false }
+        .onChange(of: selectedYear) { previous, current in
+            photoIsZoomed = false
+            guard let previous, let current, previous != current,
+                  library.years.contains(where: { $0.year == previous }) else { return }
+            let yearsAgo = MemoryIndex.calendar().component(.year, from: library.today) - current
+            guard yearsAgo > 0 else { return }
+            let toast = YearToast(yearsAgo: yearsAgo)
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { yearToast = toast }
+            AccessibilityNotification.Announcement(toast.text).post()
+        }
+        .onChange(of: photoIsZoomed) { _, zoomed in
+            if zoomed { yearToast = nil }
+        }
+        .onChange(of: library.today) { _, _ in yearToast = nil }
     }
 
     private var welcome: some View {
@@ -156,6 +177,26 @@ struct LibraryView: View {
         .foregroundStyle(.white)
         .background(Color(white: 0.045))
         .preferredColorScheme(.dark)
+        .overlay(alignment: .bottomLeading) {
+            if let yearToast {
+                Text(yearToast.text)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .padding(.leading, 16)
+                    .padding(.bottom, 60)
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+        .task(id: yearToast?.id) {
+            guard yearToast != nil else { return }
+            do { try await Task.sleep(for: .seconds(1.6)) } catch { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { yearToast = nil }
+        }
     }
 }
 
