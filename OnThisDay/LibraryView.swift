@@ -172,6 +172,7 @@ struct YearStoryView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedPhoto: String?
     @State private var cityStore = PhotoCityStore.shared
+    @State private var share = PhotoShareLoader()
 
     private var photoIndex: Int { year.photos.firstIndex(where: { $0.id == selectedPhoto }) ?? 0 }
     private var cityCoordinates: [MemoryCoordinate] {
@@ -259,6 +260,11 @@ struct YearStoryView: View {
                 Text(isCheckingScreenshots ? "Checking screenshots…" : "\(photoIndex + 1) / \(year.photos.count)")
                     .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
                     .accessibilityLabel("Photo \(photoIndex + 1) of \(year.photos.count)")
+                Button { share.prepare(id: year.photos[photoIndex].id) } label: {
+                    Image(systemName: "square.and.arrow.up").frame(width: 44, height: 44)
+                }
+                .disabled(share.isPreparing)
+                .accessibilityLabel("Share photo")
                 Spacer()
                 Button { movePhoto(1) } label: {
                     Image(systemName: "chevron.right").frame(width: 44, height: 44)
@@ -271,6 +277,36 @@ struct YearStoryView: View {
         .task(id: cityCoordinates) {
             await cityStore.load(cityCoordinates)
         }
+        .overlay(alignment: .bottom) {
+            if share.isPreparing {
+                HStack(spacing: 12) {
+                    ProgressView().tint(.white)
+                    Text(share.progress > 0 ? "Downloading photo… \(Int(share.progress * 100))%" : "Preparing photo…")
+                        .font(.footnote)
+                    Spacer()
+                    Button("Cancel", action: share.cancelPreparation).frame(minHeight: 44)
+                }
+                .padding(.horizontal, 16)
+                .background(.regularMaterial)
+            }
+        }
+        .sheet(item: $share.file, onDismiss: share.finishSharing) { file in
+            PhotoShareSheet(fileURL: file.url)
+        }
+        .alert("Couldn’t Share Photo", isPresented: Binding(
+            get: { share.errorMessage != nil },
+            set: { if !$0 { share.errorMessage = nil } }
+        )) {
+            Button("Try Again") { share.prepare(id: year.photos[photoIndex].id) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(share.errorMessage ?? "Please try again.")
+        }
+        .onChange(of: year.photos[photoIndex].id) { _, _ in share.cancelPreparation() }
+        .onChange(of: isActive) { _, active in
+            if !active { share.cancelPreparation() }
+        }
+        .onDisappear { share.cancelPreparation() }
         .onChange(of: year.photos) { _, photos in
             if !photos.contains(where: { $0.id == selectedPhoto }) { selectedPhoto = photos.first?.id }
         }
@@ -325,7 +361,7 @@ struct LibraryInfoView: View {
                     Text("AI runs on-device. Turn off to show AI-filtered photos.")
                 }
                 Section("Privacy") {
-                    Text("Photos never leave your device.")
+                    Text("Photos stay on your device unless you share them.")
                         .font(.footnote).foregroundStyle(.secondary)
                 }
             }

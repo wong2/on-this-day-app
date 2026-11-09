@@ -11,6 +11,7 @@ The Xcode project is generated from `project.yml` with [XcodeGen](https://github
 ## Browse
 
 - Allow photo access, either to your entire library or selected photos.
+- Tap the share icon beside the photo counter to open the system share sheet. PhotoKit supplies the full-resolution current image (including saved edits), not the screen preview. iCloud downloads show progress and can be cancelled. Live Photos share as still images. The file can retain location and other metadata; the receiving app decides what to preserve. Sharing happens only after you choose an action in the system sheet; temporary exports are removed when it closes.
 - Tap the left third of a photo to go back; tap the rest to advance. Horizontal swipes and explicit arrow buttons also work. Photos do not advance automatically or wrap at the ends.
 - Swipe vertically between years with matching photos, newest first. Tap the year to jump directly to another year.
 - Each year has segmented progress and a photo counter. For more than 20 photos, the progress indicator shows a sliding window of 20 segments.
