@@ -304,7 +304,7 @@ struct YearStoryView: View {
                     .opacity(photoIsZoomed ? 0 : 1)
                     .accessibilityHidden(photoIsZoomed)
                 Button { share.prepare(id: year.photos[photoIndex].id) } label: {
-                    Image(systemName: "square.and.arrow.up").frame(width: 44, height: 44)
+                    Image(systemName: "square.and.arrow.up").foregroundStyle(.secondary).frame(width: 44, height: 44)
                 }
                 .disabled(share.isPreparing)
                 .accessibilityLabel("Share photo")
