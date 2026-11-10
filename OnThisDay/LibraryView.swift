@@ -5,6 +5,8 @@ import SwiftUI
 struct LibraryView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var library = PhotoLibrary()
+    @State private var reminder = DailyReminder()
+    @State private var reminderNavigationID = UUID()
     @State private var selectedYear: Int?
     @State private var showingInfo = false
     @State private var photoIsZoomed = false
@@ -29,12 +31,25 @@ struct LibraryView: View {
             } else if library.years.isEmpty {
                 emptyLibrary
             } else {
-                memories
+                memories.id(reminderNavigationID)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(uiColor: .systemBackground))
-        .sheet(isPresented: $showingInfo) { LibraryInfoView(library: library) }
+        .sheet(isPresented: $showingInfo) { LibraryInfoView(library: library, reminder: reminder) }
+        .task(id: scenePhase) {
+            if scenePhase == .active { await reminder.refresh() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)) { _ in
+            Task { await reminder.refresh() }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .dailyReminderOpened)) { _ in
+            showingInfo = false
+            selectedYear = nil
+            photoIsZoomed = false
+            reminderNavigationID = UUID()
+            library.refresh(force: true)
+        }
         .onChange(of: scenePhase, initial: true) { _, phase in
             if phase == .active { library.refresh() }
         }
@@ -369,11 +384,42 @@ struct YearStoryView: View {
 
 struct LibraryInfoView: View {
     let library: PhotoLibrary
+    let reminder: DailyReminder
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    Toggle("Daily Reminder", isOn: Binding(
+                        get: { reminder.isEnabled },
+                        set: { enabled in Task { await reminder.setEnabled(enabled) } }
+                    ))
+                    DatePicker("Time", selection: Binding(
+                        get: { reminder.time },
+                        set: { time in Task { await reminder.setTime(time) } }
+                    ), displayedComponents: .hourAndMinute)
+                    if reminder.authorization == .denied {
+                        Text("Notifications are off in iOS Settings.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                        Button("Open Notification Settings") {
+                            guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else { return }
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    if let error = reminder.errorMessage {
+                        Text(error).font(.footnote).foregroundStyle(.secondary)
+                        Button("Try Again") {
+                            Task {
+                                if reminder.isEnabled { await reminder.refresh() }
+                                else { await reminder.setEnabled(true) }
+                            }
+                        }
+                    }
+                } footer: {
+                    Text("A daily nudge at your local time.")
+                }
+                .disabled(reminder.isUpdating)
                 Section("Gestures") {
                     Label("Tap or swipe to browse", systemImage: "hand.tap")
                     Label("Swipe vertically to change years", systemImage: "arrow.up.arrow.down")
