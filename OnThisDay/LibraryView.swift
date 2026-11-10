@@ -174,7 +174,6 @@ struct LibraryView: View {
                             olderYear: library.years.indices.contains(index + 1) ? library.years[index + 1].year : nil,
                             selectYear: { selectedYear = $0 },
                             showInfo: { showingInfo = true },
-                            isCheckingScreenshots: library.isCheckingScreenshots,
                             photoIsZoomed: $photoIsZoomed
                         )
                         .containerRelativeFrame(.vertical)
@@ -223,7 +222,6 @@ struct YearStoryView: View {
     let olderYear: Int?
     let selectYear: (Int) -> Void
     let showInfo: () -> Void
-    let isCheckingScreenshots: Bool
     @Binding var photoIsZoomed: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedPhoto: String?
@@ -304,16 +302,10 @@ struct YearStoryView: View {
             .clipped()
 
             HStack(spacing: 12) {
-                HStack(spacing: 6) {
-                    Text("\(photoIndex + 1) / \(year.photos.count)")
-                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
-                        .accessibilityLabel("Photo \(photoIndex + 1) of \(year.photos.count)")
-                    if isCheckingScreenshots {
-                        ProgressView().controlSize(.mini)
-                            .accessibilityLabel("Checking screenshots")
-                    }
-                }
-                .fixedSize()
+                Text("\(photoIndex + 1) / \(year.photos.count)")
+                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    .accessibilityLabel("Photo \(photoIndex + 1) of \(year.photos.count)")
+                    .fixedSize()
                 PhotoCityLabel(city: cityStore.cachedCity(for: year.photos[photoIndex].coordinate))
                     .frame(maxWidth: .infinity)
                     .opacity(photoIsZoomed ? 0 : 1)
