@@ -8,7 +8,9 @@
 
 /* Begin PBXBuildFile section */
 		021DDF74FF6DF7A09E2E138F /* PhotoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BC66F373747E4DB3B80FEB8 /* PhotoView.swift */; };
+		3C7DC399A8AA0083717BF662 /* DailyReminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E4EE13056DA3F1CBFDB61C /* DailyReminder.swift */; };
 		3E43823D410F34D1379FE951 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48CEC7F34644AC0C64635691 /* LibraryView.swift */; };
+		9FF3788917830BB87BEC8C64 /* DailyReminderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 552A2E7D5530EEDE65F54EBB /* DailyReminderTests.swift */; };
 		C38BCB07FC552AB81A76D1B5 /* MemoryIndexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE4FBD3A0D43E3A50FF67B55 /* MemoryIndexTests.swift */; };
 		CA7889D9281907540092E94F /* PhotoLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE0453E2B01F893FB3EEE2F /* PhotoLibrary.swift */; };
 		D40CE84D0A312529BA5D8BFE /* OnThisDayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F647AD70AB037FFD2B2C8A2 /* OnThisDayApp.swift */; };
@@ -30,6 +32,8 @@
 		1BC66F373747E4DB3B80FEB8 /* PhotoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoView.swift; sourceTree = "<group>"; };
 		1F647AD70AB037FFD2B2C8A2 /* OnThisDayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnThisDayApp.swift; sourceTree = "<group>"; };
 		48CEC7F34644AC0C64635691 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		552A2E7D5530EEDE65F54EBB /* DailyReminderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyReminderTests.swift; sourceTree = "<group>"; };
+		73E4EE13056DA3F1CBFDB61C /* DailyReminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyReminder.swift; sourceTree = "<group>"; };
 		74F58DC169FC025671E5AB01 /* OnThisDayTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = OnThisDayTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		BD633B848696F44CA2A9A708 /* MemoryIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryIndex.swift; sourceTree = "<group>"; };
 		CE4FBD3A0D43E3A50FF67B55 /* MemoryIndexTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryIndexTests.swift; sourceTree = "<group>"; };
@@ -42,6 +46,7 @@
 		11FFBE3FA767DE35E34665F5 /* OnThisDayTests */ = {
 			isa = PBXGroup;
 			children = (
+				552A2E7D5530EEDE65F54EBB /* DailyReminderTests.swift */,
 				CE4FBD3A0D43E3A50FF67B55 /* MemoryIndexTests.swift */,
 			);
 			path = OnThisDayTests;
@@ -51,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				D6573074D4D5DB059DDD190E /* Assets.xcassets */,
+				73E4EE13056DA3F1CBFDB61C /* DailyReminder.swift */,
 				48CEC7F34644AC0C64635691 /* LibraryView.swift */,
 				BD633B848696F44CA2A9A708 /* MemoryIndex.swift */,
 				1F647AD70AB037FFD2B2C8A2 /* OnThisDayApp.swift */,
@@ -170,6 +176,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3C7DC399A8AA0083717BF662 /* DailyReminder.swift in Sources */,
 				3E43823D410F34D1379FE951 /* LibraryView.swift in Sources */,
 				E2C3C7207F96B77F19C26F15 /* MemoryIndex.swift in Sources */,
 				D40CE84D0A312529BA5D8BFE /* OnThisDayApp.swift in Sources */,
@@ -182,6 +189,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9FF3788917830BB87BEC8C64 /* DailyReminderTests.swift in Sources */,
 				C38BCB07FC552AB81A76D1B5 /* MemoryIndexTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

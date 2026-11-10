@@ -10,6 +10,8 @@ The Xcode project is generated from `project.yml` with [XcodeGen](https://github
 
 ## Browse
 
+- Year menu → About → Daily Reminder enables a local notification, defaulting to **10:00 AM**. Choose another time or switch it off there. Notification permission is requested only when you enable it. iOS delivers the repeating reminder without a server or the app running, subject to Focus and notification settings. The generic reminder is sent every day, including days without matching photos; it does not expose photos, cities, or counts on the lock screen. Times use the device’s local clock. Tapping the reminder opens today’s memories. While the app is in the foreground, the notification does not interrupt browsing.
+
 - Allow photo access, either to your entire library or selected photos.
 - Tap the share icon at the bottom right to open the system share sheet. PhotoKit supplies the full-resolution current image (including saved edits), not the screen preview. iCloud downloads show progress and can be cancelled. Live Photos share as still images. The file can retain location and other metadata; the receiving app decides what to preserve. Sharing happens only after you choose an action in the system sheet; temporary exports are removed when it closes.
 - Changing years briefly shows “1 year ago” or “N years ago” at the lower left, without blocking photo gestures. Rapid changes replace the message and restart its 1.6-second timer; Reduce Motion disables the fade and VoiceOver announces the year difference.
