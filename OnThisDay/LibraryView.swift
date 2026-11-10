@@ -191,7 +191,7 @@ struct LibraryView: View {
         .foregroundStyle(.white)
         .background(Color(white: 0.045))
         .preferredColorScheme(.dark)
-        .overlay(alignment: .bottomLeading) {
+        .overlay(alignment: .top) {
             if let yearToast {
                 Text(yearToast.text)
                     .font(.subheadline.weight(.medium))
@@ -199,8 +199,8 @@ struct LibraryView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(.ultraThinMaterial, in: Capsule())
-                    .padding(.leading, 16)
-                    .padding(.bottom, 60)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 60)
                     .transition(.opacity)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
