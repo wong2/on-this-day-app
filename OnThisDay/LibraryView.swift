@@ -208,7 +208,7 @@ struct LibraryView: View {
         }
         .task(id: yearToast?.id) {
             guard yearToast != nil else { return }
-            do { try await Task.sleep(for: .seconds(1.6)) } catch { return }
+            do { try await Task.sleep(for: .seconds(3)) } catch { return }
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { yearToast = nil }
         }
     }
